@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"git.icyphox.sh/legit/git"
+	"github.com/mstcl/legit/git"
 )
 
 func isGoModule(gr *git.GitRepo) bool {

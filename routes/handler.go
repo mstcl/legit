@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"git.icyphox.sh/legit/config"
+	"github.com/mstcl/legit/config"
 )
 
 // Checks for gitprotocol-http(5) specific smells; if found, passes

@@ -1,4 +1,4 @@
-module git.icyphox.sh/legit
+module github.com/mstcl/legit
 
 go 1.22
 

@@ -7,8 +7,8 @@ import (
 	"embed"
 	"net/http"
 
-	"git.icyphox.sh/legit/config"
-	"git.icyphox.sh/legit/routes"
+	"github.com/mstcl/legit/config"
+	"github.com/mstcl/legit/routes"
 )
 
 //go:embed templates/*

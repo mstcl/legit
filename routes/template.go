@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"git.icyphox.sh/legit/git"
+	"github.com/mstcl/legit/git"
 )
 
 func (d *deps) Write404(w http.ResponseWriter) {

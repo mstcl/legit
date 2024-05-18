@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"time"
 
-	"git.icyphox.sh/legit/config"
-	"git.icyphox.sh/legit/git"
+	"github.com/mstcl/legit/config"
+	"github.com/mstcl/legit/git"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"
