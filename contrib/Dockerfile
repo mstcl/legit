@@ -1,25 +1,23 @@
-FROM golang:1.19-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
-WORKDIR /app
+RUN apk add --no-cache gcc musl-dev libc-dev git &&\
+    git clone --depth 1 https://github.com/mstcl/legit /build
 
-COPY . ./
+WORKDIR /build
 
-RUN apk add gcc musl-dev libc-dev
+ENV CGO_ENABLED=0
 
-RUN go mod download
-RUN go mod verify
 RUN go build -o legit
 
-FROM alpine:latest
+FROM scratch
+
+WORKDIR /config
+COPY --chown=1000:1000 --from=builder /build/config.yaml /config
 
 WORKDIR /app
+COPY --chown=1000:1000 --from=builder /build/legit /app/legit
 
-COPY static ./static
-COPY templates ./templates
-COPY config.yaml ./
-COPY --from=builder /app/legit ./
+EXPOSE 8080
 
-EXPOSE 5555
-
-CMD ["./legit"]
-
+ENTRYPOINT ["/app/legit"]
+CMD ["--config", "/config/config.yaml"]
