@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,10 +15,20 @@ import (
 
 	"git.icyphox.sh/legit/config"
 	"git.icyphox.sh/legit/git"
+
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/dustin/go-humanize"
-	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
+	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	ghtml "github.com/yuin/goldmark/renderer/html"
 )
+
+var Templates embed.FS
 
 type deps struct {
 	c *config.Config
@@ -31,8 +43,8 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type info struct {
-		Name, Desc, Idle string
 		d                time.Time
+		Name, Desc, Idle string
 	}
 
 	infos := []info{}
@@ -70,8 +82,7 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 		return infos[j].d.Before(infos[i].d)
 	})
 
-	tpath := filepath.Join(d.c.Dirs.Templates, "*")
-	t := template.Must(template.ParseGlob(tpath))
+	t := template.Must(template.ParseFS(Templates, filepath.Join("templates", "*")))
 
 	data := make(map[string]interface{})
 	data["meta"] = d.c.Meta
@@ -81,6 +92,46 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+}
+
+// Convert source b with renderer r to give html
+func convert(b []byte, r goldmark.Markdown) ([]byte, error) {
+	w := new(bytes.Buffer)
+
+	if err := r.Convert(b, w); err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+}
+
+func highlightContent(content string, filename string) string {
+	lexer := lexers.Match(filename)
+	if lexer == nil {
+		lexer = lexers.Analyse(content)
+	}
+	if lexer == nil {
+		lexer = lexers.Get("plaintext")
+	}
+	lexer = chroma.Coalesce(lexer)
+	style := styles.Get("friendly")
+	if style == nil {
+		style = styles.Fallback
+	}
+	formatter := html.New(
+		html.WithLineNumbers(true),
+		html.LineNumbersInTable(true),
+		html.WithLinkableLineNumbers(true, "L"),
+	)
+	iterator, err := lexer.Tokenise(nil, string(content))
+	if err != nil {
+		log.Println(err)
+	}
+	w := new(bytes.Buffer)
+	if err := formatter.Format(w, style, iterator); err != nil {
+		log.Println(err)
+	}
+	return w.String()
 }
 
 func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
@@ -112,11 +163,28 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 		if len(content) > 0 {
 			switch ext {
 			case ".md", ".mkd", ".markdown":
-				unsafe := blackfriday.Run(
-					[]byte(content),
-					blackfriday.WithExtensions(blackfriday.CommonExtensions),
+				ext := []goldmark.Extender{
+					highlighting.NewHighlighting(
+						highlighting.WithStyle("friendly"),
+					),
+					extension.GFM,
+					extension.Table,
+					extension.TaskList,
+					extension.Strikethrough,
+					extension.Linkify,
+					extension.DefinitionList,
+					extension.Footnote,
+					extension.Typographer,
+				}
+				r := goldmark.New(
+					goldmark.WithExtensions(ext...),
+					goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+					goldmark.WithRendererOptions(ghtml.WithUnsafe()),
 				)
-				html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+				html, err := convert([]byte(content), r)
+				if err != nil {
+					log.Println(err)
+				}
 				readmeContent = template.HTML(html)
 			default:
 				readmeContent = template.HTML(
@@ -138,8 +206,7 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tpath := filepath.Join(d.c.Dirs.Templates, "*")
-	t := template.Must(template.ParseGlob(tpath))
+	t := template.Must(template.ParseFS(Templates, filepath.Join("templates", "*")))
 
 	if len(commits) >= 3 {
 		commits = commits[:3]
@@ -159,8 +226,6 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
-	return
 }
 
 func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +260,6 @@ func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
 	data["dotdot"] = filepath.Dir(treePath)
 
 	d.listFiles(files, data, w)
-	return
 }
 
 func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
@@ -217,10 +281,13 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 	gr, err := git.Open(path, ref)
 	if err != nil {
 		d.Write404(w)
-		return
 	}
 
-	contents, err := gr.FileContent(treePath)
+	content, err := gr.FileContent(treePath)
+	if err != nil {
+		d.Write404(w)
+	}
+
 	data := make(map[string]any)
 	data["name"] = name
 	data["ref"] = ref
@@ -228,11 +295,11 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 	data["path"] = treePath
 
 	if raw {
-		d.showRaw(contents, w)
+		d.showRaw(content, w)
 	} else {
-		d.showFile(contents, data, w)
+		content = highlightContent(content, treePath)
+		d.showFile(content, data, w)
 	}
-	return
 }
 
 func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
@@ -257,8 +324,7 @@ func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tpath := filepath.Join(d.c.Dirs.Templates, "*")
-	t := template.Must(template.ParseGlob(tpath))
+	t := template.Must(template.ParseFS(Templates, filepath.Join("templates", "*")))
 
 	data := make(map[string]interface{})
 	data["commits"] = commits
@@ -296,8 +362,7 @@ func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tpath := filepath.Join(d.c.Dirs.Templates, "*")
-	t := template.Must(template.ParseGlob(tpath))
+	t := template.Must(template.ParseFS(Templates, filepath.Join("templates", "*")))
 
 	data := make(map[string]interface{})
 
@@ -342,8 +407,7 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tpath := filepath.Join(d.c.Dirs.Templates, "*")
-	t := template.Must(template.ParseGlob(tpath))
+	t := template.Must(template.ParseFS(Templates, filepath.Join("templates", "*")))
 
 	data := make(map[string]interface{})
 
@@ -361,7 +425,7 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 
 func (d *deps) ServeStatic(w http.ResponseWriter, r *http.Request) {
 	f := r.PathValue("file")
-	f = filepath.Clean(filepath.Join(d.c.Dirs.Static, f))
+	f = filepath.Clean(filepath.Join("./static", f))
 
 	http.ServeFile(w, r, f)
 }

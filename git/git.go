@@ -16,17 +16,17 @@ type GitRepo struct {
 
 type TagList []*object.Tag
 
-func (self TagList) Len() int {
-	return len(self)
+func (tl TagList) Len() int {
+	return len(tl)
 }
 
-func (self TagList) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
+func (tl TagList) Swap(i, j int) {
+	tl[i], tl[j] = tl[j], tl[i]
 }
 
 // sorting tags in reverse chronological order
-func (self TagList) Less(i, j int) bool {
-	return self[i].Tagger.When.After(self[j].Tagger.When)
+func (tl TagList) Less(i, j int) bool {
+	return tl[i].Tagger.When.After(tl[j].Tagger.When)
 }
 
 func Open(path string, ref string) (*GitRepo, error) {
@@ -60,10 +60,13 @@ func (g *GitRepo) Commits() ([]*object.Commit, error) {
 	}
 
 	commits := []*object.Commit{}
-	ci.ForEach(func(c *object.Commit) error {
+	err = ci.ForEach(func(c *object.Commit) error {
 		commits = append(commits, c)
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("commits from ref: %w", err)
+	}
 
 	return commits, nil
 }
@@ -107,7 +110,7 @@ func (g *GitRepo) Tags() ([]*object.Tag, error) {
 		return nil, fmt.Errorf("tag objects: %w", err)
 	}
 
-	tags := []*object.Tag{}
+	tags := TagList{}
 
 	_ = ti.ForEach(func(t *object.Tag) error {
 		for i, existing := range tags {
@@ -122,9 +125,7 @@ func (g *GitRepo) Tags() ([]*object.Tag, error) {
 		return nil
 	})
 
-	var tagList TagList
-	tagList = tags
-	sort.Sort(tagList)
+	sort.Sort(tags)
 
 	return tags, nil
 }

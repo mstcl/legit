@@ -15,10 +15,6 @@ type Config struct {
 		MainBranch []string `yaml:"mainBranch"`
 		Ignore     []string `yaml:"ignore,omitempty"`
 	} `yaml:"repo"`
-	Dirs struct {
-		Templates string `yaml:"templates"`
-		Static    string `yaml:"static"`
-	} `yaml:"dirs"`
 	Meta struct {
 		Title       string `yaml:"title"`
 		Description string `yaml:"description"`
@@ -42,12 +38,6 @@ func Read(f string) (*Config, error) {
 	}
 
 	if c.Repo.ScanPath, err = filepath.Abs(c.Repo.ScanPath); err != nil {
-		return nil, err
-	}
-	if c.Dirs.Templates, err = filepath.Abs(c.Dirs.Templates); err != nil {
-		return nil, err
-	}
-	if c.Dirs.Static, err = filepath.Abs(c.Dirs.Static); err != nil {
 		return nil, err
 	}
 

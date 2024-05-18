@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"net/http"
 
 	"git.icyphox.sh/legit/config"
@@ -13,8 +14,9 @@ func (d *deps) Multiplex(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.RawQuery == "service=git-receive-pack" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("no pushing allowed!"))
-		return
+		if _, err := w.Write([]byte("no pushing allowed!")); err != nil {
+			log.Println(err)
+		}
 	}
 
 	if path == "info/refs" &&

@@ -33,12 +33,12 @@ type NiceDiff struct {
 		This    string
 		Parent  string
 	}
+	Diff []Diff
 	Stat struct {
 		FilesChanged int
 		Insertions   int
 		Deletions    int
 	}
-	Diff []Diff
 }
 
 func (g *GitRepo) Diff() (*NiceDiff, error) {
