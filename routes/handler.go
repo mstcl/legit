@@ -35,7 +35,6 @@ func Handlers(c *config.Config) *http.ServeMux {
 	d := deps{c}
 
 	mux.HandleFunc("GET /", d.Index)
-	mux.HandleFunc("GET /static/{file}", d.ServeStatic)
 	mux.HandleFunc("GET /{name}", d.Multiplex)
 	mux.HandleFunc("POST /{name}", d.Multiplex)
 	mux.HandleFunc("GET /{name}/tree/{ref}/{rest...}", d.RepoTree)

@@ -422,10 +422,3 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-func (d *deps) ServeStatic(w http.ResponseWriter, r *http.Request) {
-	f := r.PathValue("file")
-	f = filepath.Clean(filepath.Join("./static", f))
-
-	http.ServeFile(w, r, f)
-}
