@@ -21,17 +21,16 @@
         {{ end }}
       </div>
 {{- if .readme }}
+      <hr>
       <article class="readme">
         {{- .readme -}}
       </article>
 {{- end -}}
-
+      <hr>
       <div class="clone-url">
-      <strong>clone</strong>
-        <pre>
-git clone https://{{ .servername }}/{{ .name }}
-        </pre>
+      <pre>git clone https://{{ .servername }}/{{ .name }}</pre>
       </div>
+      <br><br>
     </main>
   </body>
 </html>

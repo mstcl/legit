@@ -44,11 +44,14 @@
         {{ end }}
         {{ end }}
       </div>
+      {{- if .readme}}
       <article>
         <pre>
-          {{- if .readme }}{{ .readme }}{{- end -}}
+          {{ .readme }}
         </pre>
       </article>
+      {{- end -}}
+      <br><br>
     </main>
   </body>
 </html>

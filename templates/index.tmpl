@@ -4,7 +4,7 @@
 
   <header>
     <h1>{{ .meta.Title }}</h1>
-    <h2>{{ .meta.Description }}</h2>
+    <p class="desc">{{ .meta.Description }}</p>
   </header>
   <body>
     <main>
@@ -15,6 +15,7 @@
        <div>{{ .Idle }}</div>
       {{ end }}
       </div>
+      <br><br>
     </main>
   </body>
 </html>
