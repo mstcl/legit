@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"embed"
 	"compress/gzip"
+	"bytes"
+	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -15,8 +17,13 @@ import (
 	"strings"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/mstcl/legit/config"
 	"github.com/mstcl/legit/git"
+=======
+	"git.icyphox.sh/legit/config"
+	"git.icyphox.sh/legit/git"
+>>>>>>> fdb66eb (feat: lint, goldmark readme, chroma tree files)
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"
@@ -24,7 +31,11 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/dustin/go-humanize"
 	"github.com/yuin/goldmark"
+<<<<<<< HEAD
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
+=======
+	highlighting "github.com/yuin/goldmark-highlighting"
+>>>>>>> fdb66eb (feat: lint, goldmark readme, chroma tree files)
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	ghtml "github.com/yuin/goldmark/renderer/html"

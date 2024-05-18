@@ -31,8 +31,8 @@ type infoWrapper struct {
 	isDir   bool
 }
 
-func (self TagList) Len() int {
-	return len(self)
+func (tl TagList) Len() int {
+	return len(tl)
 }
 
 func (tl TagList) Swap(i, j int) {
