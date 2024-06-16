@@ -38,3 +38,5 @@ require (
 )
 
 replace github.com/sergi/go-diff => github.com/sergi/go-diff v1.1.0
+
+replace github.com/go-git/go-git/v5 => github.com/go-git/go-git/v5 v5.6.1
